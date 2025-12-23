@@ -24,16 +24,22 @@ def _client() -> weaviate.WeaviateClient:
     if not settings.weaviate_host:
         raise WeaviateNotConfiguredError("WEAVIATE_HOST is not set")
     auth = Auth.api_key(settings.weaviate_api_key) if settings.weaviate_api_key else None
-    return weaviate.connect_to_custom(
+    kwargs = dict(
         http_host=settings.weaviate_host,
         http_port=settings.weaviate_port,
         http_secure=settings.weaviate_secure,
-        grpc_host=settings.weaviate_host,
-        grpc_port=settings.weaviate_port + 1,  # default gRPC is http_port+1 in local docker
-        grpc_secure=settings.weaviate_secure,
         auth_credentials=auth,
         skip_init_checks=True,
     )
+    if settings.weaviate_grpc_port is not None:
+        kwargs.update(
+            {
+                "grpc_host": settings.weaviate_host,
+                "grpc_port": settings.weaviate_grpc_port,
+                "grpc_secure": settings.weaviate_grpc_secure,
+            }
+        )
+    return weaviate.connect_to_custom(**kwargs)
 
 
 def _ensure_schema() -> None:

@@ -14,6 +14,8 @@ class Settings(BaseSettings):
     weaviate_host: str | None = "localhost"
     weaviate_port: int = 8091
     weaviate_secure: bool = False
+    weaviate_grpc_port: int | None = 8092  # set to None to disable gRPC
+    weaviate_grpc_secure: bool = False
     weaviate_api_key: str | None = None
     weaviate_class: str = "Chunk"
 

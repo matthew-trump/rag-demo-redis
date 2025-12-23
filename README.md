@@ -41,6 +41,8 @@ export OPENAI_EMBEDDING_MODEL="text-embedding-3-small"  # optional
 export WEAVIATE_HOST="localhost"            # local Weaviate default
 export WEAVIATE_PORT="8091"
 export WEAVIATE_SECURE="false"
+export WEAVIATE_GRPC_PORT="8092"            # set empty to disable gRPC
+export WEAVIATE_GRPC_SECURE="false"
 export WEAVIATE_API_KEY="..."               # optional for local; required for cloud
 export WEAVIATE_CLASS="Chunk"
 # export OPENAI_API_KEY="..."              # optional (enables real OpenAI calls)
@@ -71,6 +73,8 @@ Environment variables:
 - `WEAVIATE_HOST` (default: `localhost`)
 - `WEAVIATE_PORT` (default: `8091`)
 - `WEAVIATE_SECURE` (default: `false`)
+- `WEAVIATE_GRPC_PORT` (default: `8092`; set empty/omit to disable gRPC)
+- `WEAVIATE_GRPC_SECURE` (default: `false`)
 - `WEAVIATE_API_KEY` (optional for local; required for cloud)
 - `WEAVIATE_CLASS` (default: `Chunk`)
 
