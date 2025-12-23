@@ -5,7 +5,7 @@ from functools import lru_cache
 from typing import Iterable
 
 import weaviate
-from weaviate.classes.config import Configure, VectorDistance
+from weaviate.classes.config import Configure, VectorDistances
 from weaviate.classes.init import Auth
 from weaviate.classes.query import Filter
 
@@ -42,7 +42,7 @@ def _ensure_schema() -> None:
         client.collections.create(
             settings.weaviate_class,
             vectorizer_config=Configure.Vectorizer.none(),
-            vector_index_config=Configure.VectorIndex.hnsw(distance_metric=VectorDistance.COSINE),
+            vector_index_config=Configure.VectorIndex.hnsw(distance_metric=VectorDistances.COSINE),
             properties=[
                 Configure.Property.text("content"),
                 Configure.Property.text("source"),
