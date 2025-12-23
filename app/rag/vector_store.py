@@ -46,12 +46,12 @@ def _ensure_schema() -> None:
         "class": settings.weaviate_class,
         "vectorIndexType": "hnsw",
         "vectorIndexConfig": {"distance": "cosine"},
+        "vectorizer": "none",
         "properties": [
             {"name": "content", "dataType": ["text"]},
             {"name": "source", "dataType": ["text"]},
             {"name": "chunk_index", "dataType": ["int"]},
         ],
-        "vectorConfig": {"vectorLength": EMBEDDING_DIM},
     }
     resp = requests.post(url, headers=_headers(), data=json.dumps(payload), timeout=10)
     if resp.status_code not in (200, 201):
