@@ -7,7 +7,7 @@ from typing import Iterable
 import weaviate
 from weaviate.classes.config import Configure, VectorDistances, Property, DataType
 from weaviate.classes.init import Auth
-from weaviate.classes.query import Filter
+from weaviate.classes.query import Filter, QueryReturn
 
 from app.rag.schema import EMBEDDING_DIM
 from app.rag.settings import settings
@@ -85,9 +85,7 @@ def query_top_k(query_embedding: list[float], top_k: int) -> list[dict]:
     res = coll.query.near_vector(
         query_embedding,
         limit=top_k,
-        return_metadata=["distance"],
-        # Force HTTP protocol to avoid gRPC usage.
-        query_options=weaviate.classes.query.QueryOptions(protocol="http"),
+        return_metadata=[QueryReturn.METADATA, QueryReturn.VECTOR],
     )
 
     hits: list[dict] = []
