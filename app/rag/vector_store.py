@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import hashlib
+import uuid
 from functools import lru_cache
 from typing import Iterable
 
@@ -35,8 +36,8 @@ def _ensure_collection() -> None:
 
 
 def _chunk_id(source: str, chunk: ChunkedText) -> str:
-    digest = hashlib.sha1(f"{source}-{chunk.index}-{chunk.text}".encode("utf-8")).hexdigest()[:12]
-    return f"{source}-{chunk.index}-{digest}"
+    # Qdrant expects UUID or integer IDs by default; use deterministic UUID5 for stability.
+    return str(uuid.uuid5(uuid.NAMESPACE_URL, f"{source}-{chunk.index}-{chunk.text}"))
 
 
 def upsert_chunks(chunks: Iterable[ChunkedText], embeddings: list[list[float]], source: str, metadata: dict) -> int:
