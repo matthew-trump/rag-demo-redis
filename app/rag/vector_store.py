@@ -6,6 +6,7 @@ from typing import Iterable
 
 import weaviate
 from weaviate.classes.config import Configure, VectorDistances, Property, DataType
+from weaviate.classes.data import DataObject
 from weaviate.classes.init import Auth
 from weaviate.classes.query import Filter
 
@@ -60,19 +61,19 @@ def upsert_chunks(chunks: Iterable[ChunkedText], embeddings: list[list[float]], 
     client = _client()
     coll = client.collections.get(settings.weaviate_class)
 
-    objs = []
+    objs: list[DataObject] = []
     for chunk, emb in zip(chunks, embeddings, strict=True):
         objs.append(
-            {
-                "id": _chunk_id(source, chunk),
-                "properties": {
+            DataObject(
+                uuid=_chunk_id(source, chunk),
+                properties={
                     "content": chunk.text,
                     "source": source,
                     "chunk_index": chunk.index,
                     **(metadata or {}),
                 },
-                "vector": emb,
-            }
+                vector=emb,
+            )
         )
     if not objs:
         return 0
