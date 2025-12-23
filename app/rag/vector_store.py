@@ -86,6 +86,8 @@ def query_top_k(query_embedding: list[float], top_k: int) -> list[dict]:
         query_embedding,
         limit=top_k,
         return_metadata=["distance"],
+        # Force HTTP protocol to avoid gRPC usage.
+        query_options=weaviate.classes.query.QueryOptions(protocol="http"),
     )
 
     hits: list[dict] = []
