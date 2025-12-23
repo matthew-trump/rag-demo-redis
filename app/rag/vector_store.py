@@ -42,7 +42,7 @@ def _ensure_schema() -> None:
         client.collections.create(
             settings.weaviate_class,
             vectorizer_config=Configure.Vectorizer.none(),
-            vector_index_config=Configure.VectorIndex.hnsw(distance_metric="cosine"),
+            vector_index_config=Configure.VectorIndex.hnsw(distance_metric=Configure.VectorDistances.COSINE),
             properties=[
                 Configure.Property.text("content"),
                 Configure.Property.text("source"),
