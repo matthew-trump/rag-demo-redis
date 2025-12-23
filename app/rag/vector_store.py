@@ -23,15 +23,16 @@ def _client() -> weaviate.WeaviateClient:
     if not settings.weaviate_host:
         raise WeaviateNotConfiguredError("WEAVIATE_HOST is not set")
     auth = Auth.api_key(settings.weaviate_api_key) if settings.weaviate_api_key else None
+    # If gRPC port not provided, pick a different port to satisfy client validation (unused in practice).
+    grpc_port = settings.weaviate_grpc_port or (settings.weaviate_port + 1)
     return weaviate.connect_to_custom(
         http_host=settings.weaviate_host,
         http_port=settings.weaviate_port,
         http_secure=settings.weaviate_secure,
         auth_credentials=auth,
         skip_init_checks=True,
-        # Provide gRPC params but they won’t be used if you avoid gRPC in queries.
         grpc_host=settings.weaviate_host,
-        grpc_port=settings.weaviate_grpc_port or settings.weaviate_port,
+        grpc_port=grpc_port,
         grpc_secure=settings.weaviate_grpc_secure,
     )
 
