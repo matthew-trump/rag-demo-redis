@@ -1,9 +1,9 @@
 # Design decisions
 
-## Why Qdrant?
-- Purpose-built vector DB with HNSW ANN and strong payload filtering.
-- Easy local run (Docker) and managed cloud option; you can self-host or offload operations.
-- Simple upsert/search API; supports metadata filters and multiple vectors per record.
+## Why Weaviate?
+- Purpose-built vector DB with HNSW ANN, metadata filters, and optional hybrid search.
+- Easy local run (Docker) and managed cloud option; you can self-host or use Weaviate Cloud.
+- Simple upsert/search API; supports custom vectors (no built-in vectorizer in this demo).
 
 ## Why a single FastAPI container?
 - Minimizes moving parts for a demo.

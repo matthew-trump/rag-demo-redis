@@ -1,7 +1,7 @@
 # Repository Guidelines
 
 ## Project Structure & Module Organization
-- `app/main.py` is the FastAPI entrypoint; `app/rag/` holds core modules (`api.py` routes, `vector_store.py` for Qdrant, `chunking.py`, `embeddings.py`, `retrieval.py`, `llm.py`, `prompts.py`, `settings.py`).
+- `app/main.py` is the FastAPI entrypoint; `app/rag/` holds core modules (`api.py` routes, `vector_store.py` for Weaviate, `chunking.py`, `embeddings.py`, `retrieval.py`, `llm.py`, `prompts.py`, `settings.py`).
 - `data/` contains sample `.txt` files for `/ingest_dir`.
 - `docker/` has the service `Dockerfile`; `infra/` and `scripts/` remain for containerization and infra scaffolding (adapt as needed).
 - Python version is pinned to 3.13.1 (`.python-version`), dependencies in `requirements.txt`.
@@ -9,7 +9,7 @@
 ## Build, Test, and Development Commands
 - Create venv + install: `python -m venv .venv && source .venv/bin/activate && pip install -r requirements.txt`
 - Run API locally (hot reload): `uvicorn app.main:app --reload --port 8011`
-- Qdrant env: set `QDRANT_URL` (e.g., `http://localhost:6333`), `QDRANT_API_KEY` (if needed), `QDRANT_COLLECTION`; set `OPENAI_API_KEY` to leave mock mode.
+- Weaviate env: set `WEAVIATE_HOST`/`WEAVIATE_PORT`/`WEAVIATE_SECURE` (e.g., `localhost:8091`, secure=false for local), `WEAVIATE_API_KEY` (if needed), `WEAVIATE_CLASS`; set `OPENAI_API_KEY` to leave mock mode.
 - Local Docker (optional): `docker build -t rag-demo .`.
 
 ## Coding Style & Naming Conventions
@@ -29,4 +29,4 @@
 
 ## Security & Configuration Tips
 - Do not commit secrets; use `.env` locally and environment variables in deploys. Mock mode prevents accidental OpenAI spend.
-- Qdrant Cloud requires an API key; set URL/collection per environment. Avoid sending sensitive content to third-party services unless policies allow.
+- Weaviate Cloud requires an API key; set URL/class per environment. Avoid sending sensitive content to third-party services unless policies allow.

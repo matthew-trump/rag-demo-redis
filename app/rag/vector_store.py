@@ -1,86 +1,97 @@
 from __future__ import annotations
 
-import hashlib
 import uuid
 from functools import lru_cache
 from typing import Iterable
 
-from qdrant_client import QdrantClient
-from qdrant_client.http import models as qm
+import weaviate
+from weaviate.classes.config import Configure
+from weaviate.classes.init import Auth
+from weaviate.classes.query import Filter
 
 from app.rag.schema import EMBEDDING_DIM
 from app.rag.settings import settings
 from app.rag.chunking import ChunkedText
 
 
-class QdrantNotConfiguredError(RuntimeError):
+class WeaviateNotConfiguredError(RuntimeError):
     pass
 
 
 @lru_cache(maxsize=1)
-def _client() -> QdrantClient:
-    if not settings.qdrant_url:
-        raise QdrantNotConfiguredError("QDRANT_URL is not set")
-    return QdrantClient(url=settings.qdrant_url, api_key=settings.qdrant_api_key)
+def _client() -> weaviate.WeaviateClient:
+    if not settings.weaviate_host:
+        raise WeaviateNotConfiguredError("WEAVIATE_HOST is not set")
+    auth = Auth.api_key(settings.weaviate_api_key) if settings.weaviate_api_key else None
+    return weaviate.connect_to_custom(
+        http_host=settings.weaviate_host,
+        http_port=settings.weaviate_port,
+        http_secure=settings.weaviate_secure,
+        auth_client_secret=auth,
+        skip_init_checks=True,
+    )
 
 
-@lru_cache(maxsize=1)
-def _ensure_collection() -> None:
+def _ensure_schema() -> None:
     client = _client()
-    collections = {c.name for c in client.get_collections().collections}
-    if settings.qdrant_collection not in collections:
-        client.create_collection(
-            collection_name=settings.qdrant_collection,
-            vectors_config=qm.VectorParams(size=EMBEDDING_DIM, distance=qm.Distance.COSINE),
+    existing = {c.name for c in client.collections.list_all()}
+    if settings.weaviate_class not in existing:
+        client.collections.create(
+            settings.weaviate_class,
+            vectorizer_config=Configure.Vectorizer.none(),
+            vector_index_config=Configure.VectorIndex.hnsw(distance_metric="cosine"),
+            properties=[
+                Configure.Property.text("content"),
+                Configure.Property.text("source"),
+                Configure.Property.number("chunk_index"),
+            ],
         )
 
 
 def _chunk_id(source: str, chunk: ChunkedText) -> str:
-    # Qdrant expects UUID or integer IDs by default; use deterministic UUID5 for stability.
     return str(uuid.uuid5(uuid.NAMESPACE_URL, f"{source}-{chunk.index}-{chunk.text}"))
 
 
 def upsert_chunks(chunks: Iterable[ChunkedText], embeddings: list[list[float]], source: str, metadata: dict) -> int:
-    _ensure_collection()
+    _ensure_schema()
     client = _client()
-    points: list[qm.PointStruct] = []
+    coll = client.collections.get(settings.weaviate_class)
+
+    objs = []
     for chunk, emb in zip(chunks, embeddings, strict=True):
-        points.append(
-            qm.PointStruct(
-                id=_chunk_id(source, chunk),
-                vector=emb,
-                payload={
+        objs.append(
+            {
+                "id": _chunk_id(source, chunk),
+                "properties": {
                     "content": chunk.text,
                     "source": source,
                     "chunk_index": chunk.index,
                     **(metadata or {}),
                 },
-            )
+                "vector": emb,
+            }
         )
-    if not points:
+    if not objs:
         return 0
-    client.upsert(collection_name=settings.qdrant_collection, points=points)
-    return len(points)
+    coll.data.insert_many(objs)
+    return len(objs)
 
 
 def query_top_k(query_embedding: list[float], top_k: int) -> list[dict]:
-    _ensure_collection()
+    _ensure_schema()
     client = _client()
-    res = client.search(
-        collection_name=settings.qdrant_collection,
-        query_vector=query_embedding,
-        limit=top_k,
-        with_payload=True,
-    )
+    coll = client.collections.get(settings.weaviate_class)
+    res = coll.query.near_vector(query_embedding, limit=top_k, return_metadata=["distance"])
+
     hits: list[dict] = []
-    for match in res or []:
-        md = match.payload or {}
+    for obj in res.objects:
+        props = obj.properties or {}
         hits.append(
             {
-                "id": str(match.id),
-                "content": md.get("content", ""),
-                "source": md.get("source", "unknown"),
-                "score": match.score,
+                "id": obj.uuid,
+                "content": props.get("content", ""),
+                "source": props.get("source", "unknown"),
+                "score": obj.metadata.get("distance") if obj.metadata else None,
             }
         )
     return hits

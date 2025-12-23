@@ -11,9 +11,11 @@ class Settings(BaseSettings):
     chunk_size: int = 800
     chunk_overlap: int = 120
 
-    qdrant_api_key: str | None = None
-    qdrant_url: str | None = "http://localhost:6333"
-    qdrant_collection: str = "rag-demo"
+    weaviate_host: str | None = "localhost"
+    weaviate_port: int = 8091
+    weaviate_secure: bool = False
+    weaviate_api_key: str | None = None
+    weaviate_class: str = "Chunk"
 
     # derived
     @property

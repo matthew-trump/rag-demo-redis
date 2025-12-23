@@ -1,6 +1,6 @@
-# rag-demo-qdrant (FastAPI + Qdrant + OpenAI)
+# rag-demo-weaviate (FastAPI + Weaviate + OpenAI)
 
-A deliberately small, interview-friendly **RAG** demo you can run locally with `uvicorn`. It stores chunks + embeddings in **Qdrant** and uses **OpenAI** for embeddings/answers (mock mode if no key).
+A deliberately small, interview-friendly **RAG** demo you can run locally with `uvicorn`. It stores chunks + embeddings in **Weaviate** and uses **OpenAI** for embeddings/answers (mock mode if no key).
 
 This project targets Python 3.13.x.
 If you use pyenv: 
@@ -14,8 +14,8 @@ If you use pyenv:
 - `POST /ask` → embed question + retrieve top-k + call LLM + return answer + citations
 - `POST /ingest_dir` → ingest all `.txt` files in `./data/`
 
-### Storage model (Qdrant)
-- One Qdrant collection (metric: cosine) with vectors that contain `content`, `source`, `chunk_index` (and your metadata) as payload. Qdrant is a purpose-built vector DB (HNSW ANN, metadata filters, replication/sharding) accessible via upsert/search APIs (self-hosted or managed cloud).
+### Storage model (Weaviate)
+- One Weaviate collection/class (metric: cosine) with vectors that contain `content`, `source`, `chunk_index` (and your metadata) as properties. Weaviate is a purpose-built vector DB (HNSW ANN, metadata filters, hybrid search, managed or self-hosted) accessed via upsert/query APIs.
 
 ### OpenAI integration
 - Embeddings via `client.embeddings.create(...)`
@@ -38,9 +38,11 @@ pip install -r requirements.txt
 
 export OPENAI_MODEL="gpt-5"                # optional
 export OPENAI_EMBEDDING_MODEL="text-embedding-3-small"  # optional
-export QDRANT_URL="http://localhost:6333" # local Qdrant default
-export QDRANT_API_KEY="..."               # optional for local; required for cloud
-export QDRANT_COLLECTION="rag-demo"
+export WEAVIATE_HOST="localhost"            # local Weaviate default
+export WEAVIATE_PORT="8091"
+export WEAVIATE_SECURE="false"
+export WEAVIATE_API_KEY="..."               # optional for local; required for cloud
+export WEAVIATE_CLASS="Chunk"
 # export OPENAI_API_KEY="..."              # optional (enables real OpenAI calls)
 
 uvicorn app.main:app --reload --port 8011
@@ -66,17 +68,19 @@ Environment variables:
 - `OPENAI_EMBEDDING_MODEL` (default: `text-embedding-3-small`)
 - `CHUNK_SIZE` (default: 800 chars)
 - `CHUNK_OVERLAP` (default: 120 chars)
-- `QDRANT_URL` (default: `http://localhost:6333`)
-- `QDRANT_API_KEY` (optional for local; required for cloud)
-- `QDRANT_COLLECTION` (default: `rag-demo`)
+- `WEAVIATE_HOST` (default: `localhost`)
+- `WEAVIATE_PORT` (default: `8091`)
+- `WEAVIATE_SECURE` (default: `false`)
+- `WEAVIATE_API_KEY` (optional for local; required for cloud)
+- `WEAVIATE_CLASS` (default: `Chunk`)
 
 ---
 
 ## Notes
 - This is intentionally **not** LangChain — the goal is to be transparent and minimal.
-- Qdrant collection creation is automatic if it does not exist (cosine metric, 1536-dim vectors).
+- Weaviate class creation is automatic if it does not exist (cosine metric, 1536-dim vectors, no built-in vectorizer).
 - OpenAI calls use the Chat Completions API (`client.chat.completions.create`) for broad client compatibility. If you want to switch to the newer Responses API, ensure your `openai` SDK supports it and update `app/rag/llm.py`.
-- Legacy infra (Terraform under `infra/terraform/aws/`) was written for Postgres; adapt it if you deploy this Qdrant variant.
+- Legacy infra (Terraform under `infra/terraform/aws/`) was written for Postgres; adapt it if you deploy this Weaviate variant.
 
 See:
 - [ARCHITECTURE.md](ARCHITECTURE.md)
