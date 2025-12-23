@@ -10,7 +10,7 @@ export WEAVIATE_HOST="${WEAVIATE_HOST:-localhost}"
 export WEAVIATE_PORT="${WEAVIATE_PORT:-8091}"
 export WEAVIATE_SECURE="${WEAVIATE_SECURE:-false}"
 # leave unset to disable gRPC; set to a port (e.g., 8092) to enable
-export WEAVIATE_GRPC_PORT="${WEAVIATE_GRPC_PORT:-}"
+export WEAVIATE_GRPC_PORT="${WEAVIATE_GRPC_PORT:-8092}"
 export WEAVIATE_GRPC_SECURE="${WEAVIATE_GRPC_SECURE:-false}"
 export WEAVIATE_API_KEY="${WEAVIATE_API_KEY:-}"
 export WEAVIATE_CLASS="${WEAVIATE_CLASS:-Chunk}"
