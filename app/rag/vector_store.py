@@ -23,24 +23,16 @@ def _client() -> weaviate.WeaviateClient:
     if not settings.weaviate_host:
         raise WeaviateNotConfiguredError("WEAVIATE_HOST is not set")
     auth = Auth.api_key(settings.weaviate_api_key) if settings.weaviate_api_key else None
-    # Default to HTTP only unless gRPC is explicitly configured.
-    if settings.weaviate_grpc_port:
-        return weaviate.connect_to_custom(
-            http_host=settings.weaviate_host,
-            http_port=settings.weaviate_port,
-            http_secure=settings.weaviate_secure,
-            grpc_host=settings.weaviate_host,
-            grpc_port=settings.weaviate_grpc_port,
-            grpc_secure=settings.weaviate_grpc_secure,
-            auth_credentials=auth,
-            skip_init_checks=True,
-        )
     return weaviate.connect_to_custom(
         http_host=settings.weaviate_host,
         http_port=settings.weaviate_port,
         http_secure=settings.weaviate_secure,
         auth_credentials=auth,
         skip_init_checks=True,
+        # Never use gRPC; rely on HTTP only to avoid port issues.
+        grpc_host=None,
+        grpc_port=None,
+        grpc_secure=False,
     )
 
 
@@ -89,7 +81,15 @@ def query_top_k(query_embedding: list[float], top_k: int) -> list[dict]:
     _ensure_schema()
     client = _client()
     coll = client.collections.get(settings.weaviate_class)
-    res = coll.query.near_vector(query_embedding, limit=top_k, return_metadata=["distance"])
+    res = coll.query.near_vector(
+        query_embedding,
+        limit=top_k,
+        return_metadata=["distance"],
+        query_options=weaviate.classes.query.QueryOptions(
+            consistency_level=None,  # default
+            protocol="http",  # force HTTP
+        ),
+    )
 
     hits: list[dict] = []
     for obj in res.objects:
