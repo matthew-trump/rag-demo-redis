@@ -1,4 +1,4 @@
-# rag-demo (FastAPI + Pinecone + OpenAI)
+# rag-demo-pinecone (FastAPI + Pinecone + OpenAI)
 
 A deliberately small, interview-friendly **RAG** demo you can run locally with `uvicorn`. It stores chunks + embeddings in **Pinecone** and uses **OpenAI** for embeddings/answers (mock mode if no key).
 
@@ -15,7 +15,7 @@ If you use pyenv:
 - `POST /ingest_dir` → ingest all `.txt` files in `./data/`
 
 ### Storage model (Pinecone)
-- One Pinecone index (metric: cosine) with vectors that contain `content`, `source`, `chunk_index` (and your metadata) as metadata.
+- One Pinecone index (metric: cosine) with vectors that contain `content`, `source`, `chunk_index` (and your metadata) as metadata. Pinecone is a managed, purpose-built vector DB (ANN indexes, metadata filters, replication/scaling) accessible via upsert/query APIs.
 
 ### OpenAI integration
 - Embeddings via `client.embeddings.create(...)`
