@@ -27,7 +27,7 @@ def _client() -> weaviate.WeaviateClient:
         http_host=settings.weaviate_host,
         http_port=settings.weaviate_port,
         http_secure=settings.weaviate_secure,
-        auth_client_secret=auth,
+        auth_credentials=auth,
         skip_init_checks=True,
     )
 
