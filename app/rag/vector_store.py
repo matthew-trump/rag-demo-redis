@@ -31,7 +31,7 @@ def _client() -> weaviate.WeaviateClient:
         auth_credentials=auth,
         skip_init_checks=True,
     )
-    if settings.weaviate_grpc_port is not None:
+    if settings.weaviate_grpc_port:
         kwargs.update(
             {
                 "grpc_host": settings.weaviate_host,
