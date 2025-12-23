@@ -44,7 +44,7 @@ def _client() -> weaviate.WeaviateClient:
 
 def _ensure_schema() -> None:
     client = _client()
-    existing = {c.name for c in client.collections.list_all()}
+    existing = set(client.collections.list_all())
     if settings.weaviate_class not in existing:
         client.collections.create(
             settings.weaviate_class,
