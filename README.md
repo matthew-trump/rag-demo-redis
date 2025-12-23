@@ -86,6 +86,11 @@ Environment variables:
 - OpenAI calls use the Chat Completions API (`client.chat.completions.create`) for broad client compatibility. If you want to switch to the newer Responses API, ensure your `openai` SDK supports it and update `app/rag/llm.py`.
 - Legacy infra (Terraform under `infra/terraform/aws/`) was written for Postgres; adapt it if you deploy this Weaviate variant.
 
+### Weaviate troubleshooting (what we hit here)
+- The v4 Python client prefers gRPC; gRPC kept failing on 8092 (connection reset). We switched to HTTP/REST for schema, inserts, and queries in `app/rag/vector_store.py`.
+- Ensure Weaviate is running and reachable on the HTTP port you set (default 8091 here). If you run it locally: `docker run -p 8091:8080 semitechnologies/weaviate:latest ...`.
+- If you want gRPC later, map the gRPC port (e.g., `-p 8092:8081`) and align secure/insecure settings; otherwise leave `WEAVIATE_GRPC_PORT` unset and stay HTTP-only.
+
 See:
 - [ARCHITECTURE.md](ARCHITECTURE.md)
 - [DESIGN_DECISIONS.md](DESIGN_DECISIONS.md)
