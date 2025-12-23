@@ -1,13 +1,11 @@
 from __future__ import annotations
 
 import uuid
+import json
 from functools import lru_cache
 from typing import Iterable
 
-import weaviate
-from weaviate.classes.config import Configure, VectorDistances, Property, DataType
-from weaviate.classes.init import Auth
-from weaviate.classes.query import Filter
+import requests
 
 from app.rag.schema import EMBEDDING_DIM
 from app.rag.settings import settings
@@ -17,40 +15,47 @@ from app.rag.chunking import ChunkedText
 class WeaviateNotConfiguredError(RuntimeError):
     pass
 
+class WeaviateHTTPError(RuntimeError):
+    pass
 
-@lru_cache(maxsize=1)
-def _client() -> weaviate.WeaviateClient:
-    if not settings.weaviate_host:
-        raise WeaviateNotConfiguredError("WEAVIATE_HOST is not set")
-    auth = Auth.api_key(settings.weaviate_api_key) if settings.weaviate_api_key else None
-    # If gRPC port not provided, pick a different port to satisfy client validation (unused in practice).
-    grpc_port = settings.weaviate_grpc_port or (settings.weaviate_port + 1)
-    return weaviate.connect_to_custom(
-        http_host=settings.weaviate_host,
-        http_port=settings.weaviate_port,
-        http_secure=settings.weaviate_secure,
-        auth_credentials=auth,
-        skip_init_checks=True,
-        grpc_host=settings.weaviate_host,
-        grpc_port=grpc_port,
-        grpc_secure=settings.weaviate_grpc_secure,
-    )
+
+def _base_url() -> str:
+    if not settings.weaviate_host or not settings.weaviate_port:
+        raise WeaviateNotConfiguredError("WEAVIATE_HOST/WEAVIATE_PORT not set")
+    scheme = "https" if settings.weaviate_secure else "http"
+    return f"{scheme}://{settings.weaviate_host}:{settings.weaviate_port}"
+
+
+def _headers() -> dict:
+    hdrs = {"Content-Type": "application/json"}
+    if settings.weaviate_api_key:
+        hdrs["Authorization"] = f"Bearer {settings.weaviate_api_key}"
+    return hdrs
 
 
 def _ensure_schema() -> None:
-    client = _client()
-    existing = set(client.collections.list_all())
-    if settings.weaviate_class not in existing:
-        client.collections.create(
-            settings.weaviate_class,
-            vectorizer_config=Configure.Vectorizer.none(),
-            vector_index_config=Configure.VectorIndex.hnsw(distance_metric=VectorDistances.COSINE),
-            properties=[
-                Property(name="content", data_type=DataType.TEXT),
-                Property(name="source", data_type=DataType.TEXT),
-                Property(name="chunk_index", data_type=DataType.NUMBER),
-            ],
-        )
+    url = f"{_base_url()}/v1/schema"
+    resp = requests.get(url, headers=_headers(), timeout=10)
+    if resp.status_code != 200:
+        raise WeaviateHTTPError(f"Schema fetch failed: {resp.status_code} {resp.text}")
+    existing = {cls["class"] for cls in resp.json().get("classes", [])}
+    if settings.weaviate_class in existing:
+        return
+
+    payload = {
+        "class": settings.weaviate_class,
+        "vectorIndexType": "hnsw",
+        "vectorIndexConfig": {"distance": "cosine"},
+        "properties": [
+            {"name": "content", "dataType": ["text"]},
+            {"name": "source", "dataType": ["text"]},
+            {"name": "chunk_index", "dataType": ["int"]},
+        ],
+        "vectorConfig": {"vectorLength": EMBEDDING_DIM},
+    }
+    resp = requests.post(url, headers=_headers(), data=json.dumps(payload), timeout=10)
+    if resp.status_code not in (200, 201):
+        raise WeaviateHTTPError(f"Schema create failed: {resp.status_code} {resp.text}")
 
 
 def _chunk_id(source: str, chunk: ChunkedText) -> str:
@@ -59,45 +64,60 @@ def _chunk_id(source: str, chunk: ChunkedText) -> str:
 
 def upsert_chunks(chunks: Iterable[ChunkedText], embeddings: list[list[float]], source: str, metadata: dict) -> int:
     _ensure_schema()
-    client = _client()
-    coll = client.collections.get(settings.weaviate_class)
-
     count = 0
     for chunk, emb in zip(chunks, embeddings, strict=True):
-        coll.data.insert(
-            properties={
+        payload = {
+            "class": settings.weaviate_class,
+            "id": _chunk_id(source, chunk),
+            "properties": {
                 "content": chunk.text,
                 "source": source,
                 "chunk_index": chunk.index,
                 **(metadata or {}),
             },
-            uuid=_chunk_id(source, chunk),
-            vector=emb,
-        )
+            "vector": emb,
+        }
+        resp = requests.post(f"{_base_url()}/v1/objects", headers=_headers(), data=json.dumps(payload), timeout=10)
+        if resp.status_code not in (200, 201):
+            raise WeaviateHTTPError(f"Upsert failed: {resp.status_code} {resp.text}")
         count += 1
     return count
 
 
 def query_top_k(query_embedding: list[float], top_k: int) -> list[dict]:
     _ensure_schema()
-    client = _client()
-    coll = client.collections.get(settings.weaviate_class)
-    res = coll.query.near_vector(
-        query_embedding,
-        limit=top_k,
-        return_properties=["content", "source", "chunk_index"],
-        return_metadata=["distance"],
-    )
-
-    hits: list[dict] = []
-    for obj in res.objects:
-        props = obj.properties or {}
-        hits.append(
+    graphql_query = {
+        "query": """
+        {
+          Get {
+            %s(
+              limit: %d
+              nearVector: { vector: %s }
+            ) {
+              _additional { id distance }
+              content
+              source
+              chunk_index
+            }
+          }
+        }
+        """
+        % (settings.weaviate_class, top_k, json.dumps(query_embedding))
+    }
+    resp = requests.post(f"{_base_url()}/v1/graphql", headers=_headers(), data=json.dumps(graphql_query), timeout=10)
+    if resp.status_code != 200:
+        raise WeaviateHTTPError(f"Query failed: {resp.status_code} {resp.text}")
+    data = resp.json()
+    hits = data.get("data", {}).get("Get", {}).get(settings.weaviate_class, []) or []
+    out: list[dict] = []
+    for h in hits:
+        meta = h.get("_additional", {}) or {}
+        out.append(
             {
-                "id": obj.uuid,
-                "content": props.get("content", ""),
-                "source": props.get("source", "unknown"),
-                "score": obj.metadata.get("distance") if obj.metadata else None,
+                "id": meta.get("id", ""),
+                "content": h.get("content", ""),
+                "source": h.get("source", "unknown"),
+                "score": meta.get("distance"),
             }
         )
-    return hits
+    return out
