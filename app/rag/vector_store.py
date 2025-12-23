@@ -29,11 +29,10 @@ def _client() -> weaviate.WeaviateClient:
         http_secure=settings.weaviate_secure,
         auth_credentials=auth,
         skip_init_checks=True,
-        # Never use gRPC; rely on HTTP only to avoid port issues.
+        # Provide gRPC params but they won’t be used if you avoid gRPC in queries.
         grpc_host=settings.weaviate_host,
         grpc_port=settings.weaviate_grpc_port or settings.weaviate_port,
         grpc_secure=settings.weaviate_grpc_secure,
-        grpc_enabled=False,
     )
 
 
@@ -86,10 +85,6 @@ def query_top_k(query_embedding: list[float], top_k: int) -> list[dict]:
         query_embedding,
         limit=top_k,
         return_metadata=["distance"],
-        query_options=weaviate.classes.query.QueryOptions(
-            consistency_level=None,  # default
-            protocol="http",  # force HTTP
-        ),
     )
 
     hits: list[dict] = []
