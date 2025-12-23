@@ -27,6 +27,9 @@ def _client() -> weaviate.WeaviateClient:
         http_host=settings.weaviate_host,
         http_port=settings.weaviate_port,
         http_secure=settings.weaviate_secure,
+        grpc_host=settings.weaviate_host,
+        grpc_port=settings.weaviate_port + 1,  # default gRPC is http_port+1 in local docker
+        grpc_secure=settings.weaviate_secure,
         auth_credentials=auth,
         skip_init_checks=True,
     )
