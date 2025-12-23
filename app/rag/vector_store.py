@@ -30,9 +30,10 @@ def _client() -> weaviate.WeaviateClient:
         auth_credentials=auth,
         skip_init_checks=True,
         # Never use gRPC; rely on HTTP only to avoid port issues.
-        grpc_host=None,
-        grpc_port=None,
-        grpc_secure=False,
+        grpc_host=settings.weaviate_host,
+        grpc_port=settings.weaviate_grpc_port or settings.weaviate_port,
+        grpc_secure=settings.weaviate_grpc_secure,
+        grpc_enabled=False,
     )
 
 
