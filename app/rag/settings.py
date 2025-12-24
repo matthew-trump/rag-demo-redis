@@ -11,9 +11,9 @@ class Settings(BaseSettings):
     chunk_size: int = 800
     chunk_overlap: int = 120
 
-    milvus_uri: str = "http://localhost:19530"
-    milvus_token: str | None = None
-    milvus_collection: str = "rag_demo"
+    redis_url: str = "redis://localhost:6379"
+    redis_password: str | None = None
+    redis_index: str = "rag:chunks"
 
     # derived
     @property

@@ -1,9 +1,9 @@
 # Design decisions
 
-## Why Milvus?
-- Mature vector database with robust ANN indexes (HNSW, AUTOINDEX) and cosine metric support.
-- Easy local run via a single container; also offered as managed services.
-- Simple insert/search APIs via the Python client; we supply our own embeddings.
+## Why Redis (RediSearch)?
+- Ubiquitous, simple to run locally via Redis Stack; also available as managed services.
+- RediSearch provides HNSW vector search alongside text/numeric fields for citations/filters.
+- Minimal client surface (redis-py) and straightforward deployment story for small demos.
 
 ## Why a single FastAPI container?
 - Minimizes moving parts for a demo.

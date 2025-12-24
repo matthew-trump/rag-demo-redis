@@ -3,12 +3,12 @@
 ## Components (minimal RAG)
 
 1. **FastAPI service** (single container)
-   - Ingest: chunk → embed → store (Milvus)
-   - Ask: embed question → retrieve top-k from Milvus → generate answer → return citations
+   - Ingest: chunk → embed → store (Redis + RediSearch)
+   - Ask: embed question → retrieve top-k from Redis → generate answer → return citations
 
-2. **Milvus**
-   - Stores chunks + embeddings as vectors with properties (`content`, `source`, `chunk_index`, optional metadata).
-   - Retrieval is a vector similarity query (cosine).
+2. **Redis (Redis Stack / RediSearch)**
+   - Stores chunks + embeddings as hashes with vector fields plus properties (`content`, `source`, `chunk_index`, metadata).
+   - Retrieval is a vector similarity query (cosine) via RediSearch.
 
 ## Data flow
 
@@ -16,12 +16,12 @@
 1. `POST /ingest` (text + optional metadata)
 2. Chunking (fixed-size + overlap)
 3. Embeddings
-4. Upsert N vectors to Milvus with properties/metadata
+4. Upsert N vectors to Redis with properties/metadata
 
 ### Ask
 1. `POST /ask` (question)
 2. Embed question
-3. Retrieve top-k similar chunks from Milvus
+3. Retrieve top-k similar chunks from Redis
 4. Build prompt with:
    - instructions
    - retrieved context (with citations)
@@ -29,18 +29,16 @@
 5. Call the LLM
 6. Return answer + citations (chunk ids + sources)
 
-## Storage
-
-Milvus collection:
-- Vectors sized to embedding dimension (1536) with cosine metric (AUTOINDEX).
-- Properties: `id` (UUID primary key), `content`, `source`, `chunk_index`, plus user-supplied metadata.
+## Storage (Redis)
+- Hash per chunk with fields: `id`, `content`, `source`, `filename`, `chunk_index`, `embedding` (FLOAT32 bytes, dim 1536).
+- RediSearch index (HNSW, cosine) over `embedding`; text/numeric fields for filtering and returning citations.
 
 ## Deployments
 
 ### Local dev
 - API via `uvicorn`
-- Milvus locally (e.g., `docker run -p 19530:19530 milvusdb/milvus:v2.4.6`) or a managed Milvus endpoint (update URI/token accordingly).
+- Redis Stack locally (e.g., `docker run -p 6379:6379 -p 8001:8001 redis/redis-stack:latest`) or a managed Redis with RediSearch enabled.
 
 ### Cloud
 - Containerize the FastAPI service (e.g., ECS/Fargate or your platform of choice).
-- Use a managed Milvus offering or your own Milvus deployment; configure URI/token/collection via env vars.
+- Use a managed Redis Stack/RediSearch offering or your own Redis deployment; configure `REDIS_URL`/`REDIS_INDEX`/`REDIS_PASSWORD` via env vars.

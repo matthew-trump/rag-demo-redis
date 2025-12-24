@@ -10,7 +10,7 @@ from app.rag.embeddings import embed_texts
 from app.rag.retrieval import retrieve_top_k
 from app.rag.prompts import build_context_block
 from app.rag.llm import generate_answer
-from app.rag.vector_store import upsert_chunks, MilvusNotConfiguredError
+from app.rag.vector_store import upsert_chunks, RedisNotConfiguredError
 
 router = APIRouter()
 
@@ -33,7 +33,7 @@ def ingest(req: IngestRequest) -> dict:
 
     try:
         added = upsert_chunks(chunks, embeddings, req.source, req.metadata)
-    except MilvusNotConfiguredError as exc:
+    except RedisNotConfiguredError as exc:
         raise HTTPException(status_code=503, detail=str(exc)) from exc
 
     return {"ok": True, "document_source": req.source, "chunks_ingested": added, "mode": settings.mode}
@@ -44,7 +44,7 @@ def ask(req: AskRequest) -> dict:
 
     try:
         hits = retrieve_top_k(q_emb, req.top_k)
-    except MilvusNotConfiguredError as exc:
+    except RedisNotConfiguredError as exc:
         raise HTTPException(status_code=503, detail=str(exc)) from exc
 
     context = build_context_block(hits)
@@ -78,7 +78,7 @@ def ingest_dir() -> dict:
         embeddings = embed_texts([c.text for c in chunks])
         try:
             total_chunks += upsert_chunks(chunks, embeddings, f"file:{filename}", {"filename": filename})
-        except MilvusNotConfiguredError as exc:
+        except RedisNotConfiguredError as exc:
             raise HTTPException(status_code=503, detail=str(exc)) from exc
 
     return {"ok": True, "files": [t[0] for t in texts], "chunks_ingested": total_chunks, "mode": settings.mode}

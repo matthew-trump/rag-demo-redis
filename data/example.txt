@@ -1,6 +1,6 @@
 RAG Demo
 
-This demo stores document chunks and their embeddings in Milvus.
+This demo stores document chunks and their embeddings in Redis (RediSearch).
 At query time, it retrieves the most similar chunks and sends them as context to the model.
 
 Goal: the smallest architecture that is still “real” and deployable.

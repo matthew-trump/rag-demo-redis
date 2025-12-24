@@ -12,10 +12,10 @@ logging.basicConfig(level=logging.INFO)
 @app.on_event("startup")
 def _startup() -> None:
     logger.info(
-        "Starting with mode=%s, milvus_uri=%s, milvus_collection=%s",
+        "Starting with mode=%s, redis_url=%s, redis_index=%s",
         settings.mode,
-        settings.milvus_uri,
-        settings.milvus_collection,
+        settings.redis_url,
+        settings.redis_index,
     )
 
 @app.get("/health")
