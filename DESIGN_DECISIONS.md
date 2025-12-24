@@ -5,6 +5,11 @@
 - RediSearch provides HNSW vector search alongside text/numeric fields for citations/filters.
 - Minimal client surface (redis-py) and straightforward deployment story for small demos.
 
+## Setup experience (relative)
+- Postgres + pgvector: solid but heavier to configure; indexing/tuning is manual.
+- Weaviate/Milvus: feature-rich but local setup can be finicky (extra deps like MinIO/etcd, gRPC ports).
+- Redis/RediSearch: quickest to stand up locally (single container) with minimal tuning for a small RAG demo.
+
 ## Why a single FastAPI container?
 - Minimizes moving parts for a demo.
 - Keeps local + cloud parity high.
