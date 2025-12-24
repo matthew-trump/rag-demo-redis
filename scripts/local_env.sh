@@ -1,20 +1,13 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-export DATABASE_URL="${DATABASE_URL:-postgresql+psycopg://rag:rag@localhost:5432/rag}"
 export OPENAI_MODEL="${OPENAI_MODEL:-gpt-5}"
 export OPENAI_EMBEDDING_MODEL="${OPENAI_EMBEDDING_MODEL:-text-embedding-3-small}"
 export CHUNK_SIZE="${CHUNK_SIZE:-800}"
 export CHUNK_OVERLAP="${CHUNK_OVERLAP:-120}"
-export WEAVIATE_HOST="${WEAVIATE_HOST:-localhost}"
-export WEAVIATE_PORT="${WEAVIATE_PORT:-8091}"
-export WEAVIATE_SECURE="${WEAVIATE_SECURE:-false}"
-# leave unset to disable gRPC; set to a port (e.g., 8092) to enable
-export WEAVIATE_GRPC_PORT="${WEAVIATE_GRPC_PORT:-}"
-export WEAVIATE_GRPC_SECURE="${WEAVIATE_GRPC_SECURE:-false}"
-export WEAVIATE_API_KEY="${WEAVIATE_API_KEY:-}"
-export WEAVIATE_CLASS="${WEAVIATE_CLASS:-Chunk}"
+export MILVUS_URI="${MILVUS_URI:-http://localhost:19530}"
+export MILVUS_TOKEN="${MILVUS_TOKEN:-}"
+export MILVUS_COLLECTION="${MILVUS_COLLECTION:-rag_demo}"
 
-echo "WEAVIATE_HOST=$WEAVIATE_HOST"
-echo "WEAVIATE_PORT=$WEAVIATE_PORT"
-echo "WEAVIATE_CLASS=$WEAVIATE_CLASS"
+echo "MILVUS_URI=$MILVUS_URI"
+echo "MILVUS_COLLECTION=$MILVUS_COLLECTION"

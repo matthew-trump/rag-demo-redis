@@ -12,11 +12,10 @@ logging.basicConfig(level=logging.INFO)
 @app.on_event("startup")
 def _startup() -> None:
     logger.info(
-        "Starting with mode=%s, weaviate_host=%s, weaviate_port=%s, weaviate_class=%s",
+        "Starting with mode=%s, milvus_uri=%s, milvus_collection=%s",
         settings.mode,
-        settings.weaviate_host,
-        settings.weaviate_port,
-        settings.weaviate_class,
+        settings.milvus_uri,
+        settings.milvus_collection,
     )
 
 @app.get("/health")

@@ -1,9 +1,9 @@
 # Design decisions
 
-## Why Weaviate?
-- Purpose-built vector DB with HNSW ANN, metadata filters, and optional hybrid search.
-- Easy local run (Docker) and managed cloud option; you can self-host or use Weaviate Cloud.
-- Simple upsert/search API; supports custom vectors (no built-in vectorizer in this demo).
+## Why Milvus?
+- Mature vector database with robust ANN indexes (HNSW, AUTOINDEX) and cosine metric support.
+- Easy local run via a single container; also offered as managed services.
+- Simple insert/search APIs via the Python client; we supply our own embeddings.
 
 ## Why a single FastAPI container?
 - Minimizes moving parts for a demo.

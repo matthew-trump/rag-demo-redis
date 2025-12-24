@@ -11,13 +11,9 @@ class Settings(BaseSettings):
     chunk_size: int = 800
     chunk_overlap: int = 120
 
-    weaviate_host: str | None = "localhost"
-    weaviate_port: int = 8091
-    weaviate_secure: bool = False
-    weaviate_grpc_port: int | None = None  # set to a port (e.g., 8092) to enable gRPC; None disables
-    weaviate_grpc_secure: bool = False
-    weaviate_api_key: str | None = None
-    weaviate_class: str = "Chunk"
+    milvus_uri: str = "http://localhost:19530"
+    milvus_token: str | None = None
+    milvus_collection: str = "rag_demo"
 
     # derived
     @property
